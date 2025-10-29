@@ -367,19 +367,32 @@ Emailjs.init(“A7IhyaA7Ughtu7dgv”)；
             URL.revokeObjectURL(url);
         
 //再自動寄信
-	sendResultEmail(htmlContent);
+ sendResultEmail(htmlContent，data);
 }
 
 // 自動寄信
-    	function sendResultEmail(htmlcontent){
-	emailjs.send("service_xlk6s0u","template_54mrzij",{
-        to_email: "jola83725@rs11.page",
-        subject: `色系偏好結果 - ${data.userInfo.name || "客戶"}`,
+     // 【修改二】sendResultEmail 函式接收 data 參數
+function sendResultEmail(htmlContent, data){ // <--- 接收 data 參數
+    // 檢查 data 是否存在，以防萬一
+    if (!data || !data.userInfo) {
+        console.error("寄信失敗: 缺少用戶資料 (data)。");
+        return;
+    }
+    
+    // emailjs.send 參數修正
+    emailjs.send("service_xxx","template_xxx",{
+        to_email: "S93186183@rs11.page",
+        // 【修正點】使用傳入的 data 參數
+        subject: `色系偏好結果 - ${data.userInfo.name || "客戶"}`, 
         message_html: htmlContent
     }).then(response => {
         console.log("寄信成功", response.status, response.text);
+        // 可以新增成功訊息給使用者
+        alert('結果已成功寄出！'); 
     }, error => {
         console.error("寄信失敗", error);
+        // 可以新增失敗訊息給使用者
+        alert('自動寄信功能失敗，請手動下載並寄送結果。');
     });
 }
 
@@ -427,3 +440,4 @@ Emailjs.init(“A7IhyaA7Ughtu7dgv”)；
     </script>
 </body>
 </html>
+
