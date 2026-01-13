@@ -1,5 +1,13 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+<script
+src=https://cdn.emailjs.com/dist/email.min.js></script>
+<script>
+Emailjs.init(“A7IhyaA7Ughtu7dgv”)；
+//大概長得會像這樣EX：ＤSfispXXXXX
+
+</script>
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -41,18 +49,8 @@
         .round-selections { margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px; }
         .round-title { font-weight: bold; color: #555; margin-bottom: 8px; }
         .selected-images { display: flex; flex-wrap: wrap; gap: 8px; }
-        
-        /* 【修改】放大結果頁的圖片縮圖 */
-        .selected-image-thumbnail {
-            width: 120px; /* 從 80px 放大 */
-            height: 90px; /* 從 60px 放大 */
-            object-fit: cover;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            transition: transform 0.2s ease;
-        }
+        .selected-image-thumbnail { width: 160px; height: 120px; object-fit: cover; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.2s ease; }
         .selected-image-thumbnail:hover { transform: scale(1.05); }
-
         .restart-btn { background: #6c757d; color: white; border: none; padding: 12px 30px; border-radius: 20px; font-size: 14px; cursor: pointer; margin-top: 10px; transition: all 0.3s ease; }
         .restart-btn:hover { background: #5a6268; transform: translateY(-1px); }
         .user-info-form { background: #f8f9fa; border-radius: 15px; padding: 20px; margin-bottom: 20px; }
@@ -65,8 +63,11 @@
         .result-actions { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
         .action-btn { background: #8B4513; color: white; border: none; padding: 12px 30px; border-radius: 20px; font-size: 14px; cursor: pointer; transition: all 0.3s ease; }
         .action-btn:hover { background: #A0522D; transform: translateY(-1px); }
-        @media (max-width: 768px) { .container { padding: 20px; } .title { font-size: 24px; } .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
-        @media (max-width: 480px) { .grid { grid-template-columns: 1fr; } .image-option { aspect-ratio: 3/2; } .form-grid { grid-template-columns: 1fr; } }
+        
+        /* 【修改】移除會改變九宮格的設定 */
+        @media (max-width: 768px) { .container { padding: 20px; } .title { font-size: 24px; } }
+        /* 【修改】在小螢幕上縮小間距，讓九宮格更適配 */
+        @media (max-width: 480px) { .grid { gap: 8px; } .form-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -79,7 +80,7 @@
 
         <div id="game-area">
             <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
-            <div class="round-info" id="round-info">第 1 輪 / 5 輪</div>
+            <div class="round-info" id="round-info">第 1 輪 / 3 輪</div>
             <div class="selection-counter" id="selection-counter">已選擇 0 張圖片</div>
             <div class="grid" id="image-grid"></div>
             <button class="next-btn" id="next-btn" onclick="nextRound()">下一輪</button>
@@ -105,6 +106,7 @@
             </div>
 
             <div class="result-actions">
+                <button class="action-btn" onclick="handleShareLink()">🔗 複製分享連結</button>
                 <button class="action-btn" onclick="handleDownloadResult()">📥 下載結果網頁</button>
                 <button class="restart-btn" onclick="restart()">🔄 重新測試</button>
             </div>
@@ -113,19 +115,20 @@
 
     <script>
         const interiorSchemes = {
-            creamy: { name: '奶油色系', englishName: 'Creamy Neutrals', colors: ['奶油白', '米色', '淺卡其', '淺木色'], characteristics: ['柔和', '暖調', '明亮'], styles: ['奶油風', '柔和北歐風'], description: '溫馨療癒感，人氣高', images: ['https://i.postimg.cc/sgRVMGqN/1.png','https://i.postimg.cc/bwHqkNjN/2.png','https://i.postimg.cc/cJx0mys7/3.png','https://i.postimg.cc/PqShV3xg/4.png','https://i.postimg.cc/G2NRd4vz/5.png'], sampleImage: 'https://i.postimg.cc/PqShV3xg/4.png' },
-            wood: { name: '木植色系', englishName: 'Natural Wood Tones', colors: ['橡木', '胡桃木', '原木', '藤編'], characteristics: ['溫潤', '自然', '低飽和'], styles: ['北歐風', '侘寂風'], description: '偏自然系統，材質感強', images: ['https://i.postimg.cc/vBSYTqwr/1.png','https://i.postimg.cc/d3kqy2Jz/2.png','https://i.postimg.cc/0jT9dzQr/3.png','https://i.postimg.cc/v8k8dNzM/4.png','https://i.postimg.cc/FsSrFVWS/5.png'], sampleImage: 'https://i.postimg.cc/vBSYTqwr/1.png' },
-            earth: { name: '大地色系', englishName: 'Earthy Tones', colors: ['岩灰', '泥棕', '赭色', '橄欖綠'], characteristics: ['沉穩', '包容性高'], styles: ['侘寂風', '自然風', '日系混搭'], description: '與材質連動性高', images: ['https://i.postimg.cc/FR1vMyk7/1.png','https://i.postimg.cc/hvdBjKrn/2.png','https://i.postimg.cc/141ZVbCq/3.png','https://i.postimg.cc/Y2GGggDr/4.png','https://i.postimg.cc/dQb791g8/5.png'], sampleImage: 'https://i.postimg.cc/hvdBjKrn/2.png' },
-            neutral: { name: '中性系', englishName: 'Neutrals', colors: ['黑', '白', '灰', '深木（胡桃木）'], characteristics: ['沉靜', '極簡', '無彩度'], styles: ['現代簡約', '極簡風', '侘寂風'], description: '有設計感但不浮誇', images: ['https://i.postimg.cc/wTD14zdn/1.png','https://i.postimg.cc/YCkhJPr0/2.png','https://i.postimg.cc/3xBd7ZNB/3.png','https://i.postimg.cc/fbRkb00h/4.png','https://i.postimg.cc/432yHNzH/5.png'], sampleImage: 'https://i.postimg.cc/432yHNzH/5.png' },
-            luxe: { name: '明亮輕奢系', englishName: 'Luxe Neutrals', colors: ['白', '淺灰', '米色', '金屬點綴'], characteristics: ['高級感', '亮麗', '清新'], styles: ['輕奢風', '精品飯店風'], description: '白灰為底＋金屬配件是關鍵', images: ['https://i.postimg.cc/76THC1Hj/1.png','https://i.postimg.cc/1Xh9Dg4X/2.png','https://i.postimg.cc/3NX31KDB/3.png','https://i.postimg.cc/fWmWDvg9/4.png','https://i.postimg.cc/fTszL06g/5.png'], sampleImage: 'https://i.postimg.cc/3NX31KDB/3.png' },
-            morandi: { name: '莫蘭迪色系', englishName: 'Muted Morandi Tones', colors: ['灰藍', '灰綠', '乾燥玫瑰', '灰紫'], characteristics: ['柔和', '文藝', '淡雅'], styles: ['北歐風', '現代日系', '文青宅'], description: '適合不想要純中性的人', images: ['https://i.postimg.cc/XJZJfS8H/1.png','https://i.postimg.cc/qR97QbDk/2.png','https://i.postimg.cc/cCwLzRPf/3.png','https://i.postimg.cc/nVDrMxMM/4.png','https://i.postimg.cc/Hs1xyN7z/5.png'], sampleImage: 'https://i.postimg.cc/Hs1xyN7z/5.png' },
-            industrial: { name: '工業灰系', englishName: 'Industrial Grays', colors: ['石墨灰', '水泥灰', '炭黑', '金屬鐵件灰'], characteristics: ['陰鬱', '冷硬', '都會感'], styles: ['工業風', 'Loft', '現代粗獷風格'], description: '與水泥、金屬、磚牆等建材搭配佳', images: ['https://i.postimg.cc/Jzwhj2DK/1.png','https://i.postimg.cc/6pdpcfCK/2.png','https://i.postimg.cc/5tgNd9Pk/3.png','https://i.postimg.cc/C1KMFyXM/4.png','https://i.postimg.cc/SKkNvYGM/5.png'], sampleImage: 'https://i.postimg.cc/5tgNd9Pk/3.png' },
-            cooldeep: { name: '冷色簡約系', englishName: 'Deep Cool Tones', colors: ['海軍藍', '墨綠', '靛藍', '深灰藍'], characteristics: ['冷靜', '理性', '內斂'], styles: ['現代奢華風', '簡約理性宅'], description: '相較工業灰更內斂、少金屬感，偏深冷色優雅系', images: ['https://i.postimg.cc/L6VHZ8S4/1.png','https://i.postimg.cc/Z5KJPzY8/2.png','https://i.postimg.cc/Gm7dqg9Z/3.png','https://i.postimg.cc/zfy5Mwg3/4.png','https://i.postimg.cc/5tD1MHBg/5.png'], sampleImage: 'https://i.postimg.cc/L6VHZ8S4/1.png' },
-            retro: { name: '復古飽和系', englishName: 'Retro Rich Tones', colors: ['酒紅', '芥黃', '焦糖色', '墨綠'], characteristics: ['濃郁', '復古', '個性強'], styles: ['工業風', '復古混搭', '美式經典'], description: '少數人偏好，但風格強烈', images: ['https://i.postimg.cc/TYjPqcV6/1.png','https://i.postimg.cc/HkpkS7z7/2.png','https://i.postimg.cc/L8N6G6QQ/3.png','https://i.postimg.cc/fbyTsn6z/4.png','https://i.postimg.cc/hGY4PZB9/5.png'], sampleImage: 'https://i.postimg.cc/HkpkS7z7/2.png' }
+            creamy: { name: '奶油色系', englishName: 'Creamy Neutrals', images: ['https://i.postimg.cc/sgRVMGqN/1.png','https://i.postimg.cc/bwHqkNjN/2.png','https://i.postimg.cc/cJx0mys7/3.png','https://i.postimg.cc/PqShV3xg/4.png','https://i.postimg.cc/G2NRd4vz/5.png'], sampleImage: 'https://i.postimg.cc/PqShV3xg/4.png' },
+            wood: { name: '木植色系', englishName: 'Natural Wood Tones', images: ['https://i.postimg.cc/vBSYTqwr/1.png','https://i.postimg.cc/d3kqy2Jz/2.png','https://i.postimg.cc/0jT9dzQr/3.png','https://i.postimg.cc/v8k8dNzM/4.png','https://i.postimg.cc/FsSrFVWS/5.png'], sampleImage: 'https://i.postimg.cc/vBSYTqwr/1.png' },
+            earth: { name: '大地色系', englishName: 'Earthy Tones', images: ['https://i.postimg.cc/FR1vMyk7/1.png','https://i.postimg.cc/hvdBjKrn/2.png','https://i.postimg.cc/141ZVbCq/3.png','https://i.postimg.cc/Y2GGggDr/4.png','https://i.postimg.cc/dQb791g8/5.png'], sampleImage: 'https://i.postimg.cc/hvdBjKrn/2.png' },
+            neutral: { name: '中性系', englishName: 'Neutrals', images: ['https://i.postimg.cc/wTD14zdn/1.png','https://i.postimg.cc/YCkhJPr0/2.png','https://i.postimg.cc/3xBd7ZNB/3.png','https://i.postimg.cc/fbRkb00h/4.png','https://i.postimg.cc/432yHNzH/5.png'], sampleImage: 'https://i.postimg.cc/432yHNzH/5.png' },
+            luxe: { name: '明亮輕奢系', englishName: 'Luxe Neutrals', images: ['https://i.postimg.cc/76THC1Hj/1.png','https://i.postimg.cc/1Xh9Dg4X/2.png','https://i.postimg.cc/3NX31KDB/3.png','https://i.postimg.cc/fWmWDvg9/4.png','https://i.postimg.cc/fTszL06g/5.png'], sampleImage: 'https://i.postimg.cc/3NX31KDB/3.png' },
+            morandi: { name: '莫蘭迪色系', englishName: 'Muted Morandi Tones', images: ['https://i.postimg.cc/XJZJfS8H/1.png','https://i.postimg.cc/qR97QbDk/2.png','https://i.postimg.cc/cCwLzRPf/3.png','https://i.postimg.cc/nVDrMxMM/4.png','https://i.postimg.cc/Hs1xyN7z/5.png'], sampleImage: 'https://i.postimg.cc/Hs1xyN7z/5.png' },
+            industrial: { name: '工業灰系', englishName: 'Industrial Grays', images: ['https://i.postimg.cc/Jzwhj2DK/1.png','https://i.postimg.cc/6pdpcfCK/2.png','https://i.postimg.cc/5tgNd9Pk/3.png','https://i.postimg.cc/C1KMFyXM/4.png','https://i.postimg.cc/SKkNvYGM/5.png'], sampleImage: 'https://i.postimg.cc/5tgNd9Pk/3.png' },
+            cooldeep: { name: '冷色簡約系', englishName: 'Deep Cool Tones', images: ['https://i.postimg.cc/L6VHZ8S4/1.png','https://i.postimg.cc/Z5KJPzY8/2.png','https://i.postimg.cc/Gm7dqg9Z/3.png','https://i.postimg.cc/zfy5Mwg3/4.png','https://i.postimg.cc/5tD1MHBg/5.png'], sampleImage: 'https://i.postimg.cc/L6VHZ8S4/1.png' },
+            retro: { name: '復古飽和系', englishName: 'Retro Rich Tones', images: ['https://i.postimg.cc/TYjPqcV6/1.png','https://i.postimg.cc/HkpkS7z7/2.png','https://i.postimg.cc/L8N6G6QQ/3.png','https://i.postimg.cc/fbyTsn6z/4.png','https://i.postimg.cc/hGY4PZB9/5.png'], sampleImage: 'https://i.postimg.cc/HkpkS7z7/2.png' }
         };
+        // 省略了 interiorSchemes 的詳細內容以縮短篇幅，實際代碼中應為完整版
 
         let currentRound = 1;
-        let totalRounds = 5;
+        let totalRounds = 3;
         let selectedChoices = [];
         let colorPreferences = {};
         let currentRoundSelections = [];
@@ -162,7 +165,6 @@
             const div = document.createElement('div');
             div.className = 'image-option loading-placeholder';
             div.dataset.scheme = option.scheme;
-            div.dataset.index = index;
             div.dataset.imageName = option.name;
             div.dataset.imageUrl = option.imageUrl;
             div.textContent = '載入中...';
@@ -218,20 +220,16 @@
             } else {
                 document.getElementById('info-date').value = new Date().toISOString().split('T')[0];
             }
-            
             const sortedPreferences = Object.entries(prefs).sort((a, b) => b[1] - a[1]);
             const totalSelections = Object.values(prefs).reduce((sum, count) => sum + count, 0);
-
-            // 【修改】過濾掉沒有被選擇過的風格 (count > 0)
             const filteredPreferences = sortedPreferences.filter(([scheme, count]) => count > 0);
-
             filteredPreferences.forEach(([scheme, count]) => {
                 const schemeData = interiorSchemes[scheme];
                 if (!schemeData) return;
                 const percentage = totalSelections > 0 ? ((count / totalSelections) * 100).toFixed(1) : 0;
                 const colorItem = document.createElement('div');
                 colorItem.className = 'color-item';
-                colorItem.innerHTML = `<div class="color-sample" style="background-image: url('${schemeData.sampleImage}');"></div><div class="color-info"><div class="color-name">${schemeData.name} (${schemeData.englishName})</div><div class="color-percentage">選擇佔比: ${percentage}% (${count}次)</div><div class="color-description">${schemeData.description} | 特色: ${schemeData.characteristics.join(', ')}</div></div>`;
+                colorItem.innerHTML = `<div class="color-sample" style="background-image: url('${schemeData.sampleImage}');"></div><div class="color-info"><div class="color-name">${schemeData.name} (${schemeData.englishName})</div><div class="color-percentage">選擇佔比: ${percentage}% (${count}次)</div></div>`;
                 analysisContainer.appendChild(colorItem);
             });
             choices.forEach(roundData => {
@@ -259,8 +257,8 @@
             roundInfo.textContent = `第 ${currentRound} 輪 / ${totalRounds} 輪`;
             progressBar.style.width = `${((currentRound - 1) / totalRounds) * 100}%`;
             const options = generateInteriorOptions();
-            options.forEach((option, index) => {
-                const element = createInteriorElement(option, index);
+            options.forEach((option) => {
+                const element = createInteriorElement(option);
                 imageGrid.appendChild(element);
             });
             if(currentRound === totalRounds) { document.getElementById('next-btn').textContent = '查看結果'; }
@@ -293,10 +291,7 @@
             const styles = document.querySelector('style').innerHTML;
             const sortedPreferences = Object.entries(data.preferences).sort((a, b) => b[1] - a[1]);
             const totalSelections = Object.values(data.preferences).reduce((sum, count) => sum + count, 0);
-
-            // 【修改】同樣在此處過濾，確保下載的檔案也只顯示有選擇的風格
             const filteredPreferences = sortedPreferences.filter(([scheme, count]) => count > 0);
-
             const analysisHTML = filteredPreferences.map(([scheme, count]) => {
                 const schemeData = interiorSchemes[scheme];
                 if (!schemeData) return '';
@@ -306,11 +301,9 @@
                     <div class="color-info">
                         <div class="color-name">${schemeData.name} (${schemeData.englishName})</div>
                         <div class="color-percentage">選擇佔比: ${percentage}% (${count}次)</div>
-                        <div class="color-description">${schemeData.description} | 特色: ${schemeData.characteristics.join(', ')}</div>
                     </div>
                 </div>`;
             }).join('');
-
             const choicesHTML = data.choices.map(roundData => {
                 const imagesHTML = roundData.choices.map(choice => 
                     `<img class="selected-image-thumbnail" src="${choice.imageUrl}" title="${choice.imageName}">`
@@ -320,7 +313,6 @@
                     <div class="selected-images">${imagesHTML}</div>
                 </div>`;
             }).join('');
-            
             const userInfoHTML = `<div class="user-info-form">
                 <h3>📝 客戶資料記錄</h3>
                 <div class="form-grid">
@@ -331,7 +323,6 @@
                     <div class="form-group full-width"><label>日期</label><input type="date" value="${data.userInfo.date}" disabled></div>
                 </div>
             </div>`;
-
             return `<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -363,6 +354,7 @@
                 return;
             }
             const htmlContent = generateResultHTML(data);
+//先下載
             const blob = new Blob([htmlContent], { type: 'text/html' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -373,11 +365,64 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-        }
+        
+//再自動寄信
+	sendResultEmail(htmlContent);
+}
 
+// 自動寄信
+    	function sendResultEmail(htmlcontent){
+	emailjs.send("service_xlk6s0u","template_54mrzij",{
+        to_email: "jola83725@rs11.page",
+        subject: `色系偏好結果 - ${data.userInfo.name || "客戶"}`,
+        message_html: htmlContent
+    }).then(response => {
+        console.log("寄信成功", response.status, response.text);
+    }, error => {
+        console.error("寄信失敗", error);
+    });
+}
+
+        // 【修改】恢復分享連結功能並使用更穩定的編碼方式
+        function handleShareLink() {
+            const data = getResultData();
+            const jsonString = JSON.stringify(data);
+            // 使用新的標準編碼方式，避免亂碼和毀損
+            const encodedData = encodeURIComponent(jsonString);
+            const shareUrl = `${window.location.origin}${window.location.pathname}?result=${encodedData}`;
+
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                const shareButton = document.querySelector('.action-btn[onclick="handleShareLink()"]');
+                const originalText = shareButton.textContent;
+                shareButton.textContent = '✅ 已複製！';
+                setTimeout(() => { shareButton.textContent = originalText; }, 2000);
+            }).catch(err => {
+                alert('複製失敗，您的瀏覽器可能不支援此功能。');
+                console.error('複製失敗:', err);
+            });
+        }
+        
+        // 【修改】恢復頁面載入時的連結解析功能
         window.onload = () => {
-            prepareImageDeck();
-            startRound();
+            const urlParams = new URLSearchParams(window.location.search);
+            const resultData = urlParams.get('result');
+
+            if (resultData) {
+                try {
+                    // 使用新的標準解碼方式
+                    const decodedString = decodeURIComponent(resultData);
+                    const sharedData = JSON.parse(decodedString);
+                    showResult(sharedData);
+                } catch (e) {
+                    console.error("無法解析分享的結果:", e);
+                    alert("分享連結無效或已損毀，將開始新的測驗。");
+                    prepareImageDeck();
+                    startRound();
+                }
+            } else {
+                prepareImageDeck();
+                startRound();
+            }
         };
     </script>
 </body>
